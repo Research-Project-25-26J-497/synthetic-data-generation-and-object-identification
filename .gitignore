@@ -1,0 +1,19 @@
+# Ignore ROS 2 Build files
+build/
+install/
+log/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore large datasets (Do NOT upload 1000s of images)
+collected_dataset/
+auto_dataset/
+dataset/
+
+# Ignore heavy training logs (keep only the final model)
+runs/
+
+# Ignore virtual environments
+venv/
