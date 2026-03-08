@@ -1,4 +1,4 @@
-# Autonomous LiDAR Data Miner & MLOps Pipeline
+# Autonomous LiDAR Data Miner
 
 This repository contains a fully automated, containerized synthetic data generation pipeline for robotics and machine learning research. It runs a headless ROS 2 (Humble) simulation of a TurtleBot3 navigating a custom multi-room warehouse to mine LiDAR and odometry data, all controlled via a modern REST API.
 
