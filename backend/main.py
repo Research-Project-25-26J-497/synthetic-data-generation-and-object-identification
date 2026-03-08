@@ -34,8 +34,17 @@ def run_docker_miner():
     # DYNAMIC HOT-SWAP: If you uploaded a custom world, mount it directly over the default one inside the container!
     if os.path.exists(custom_world_path):
         print("--> Background Task: Custom world detected! Injecting into simulation...")
-        container_world_path = "/app/ros2_ws/install/research_bot/share/research_bot/worlds/multi_room_warehouse.world"
-        command.extend(["-v", f"{custom_world_path}:{container_world_path}"])
+        
+        # Target 1: The compiled runtime folder
+        install_path = "/root/ros2_ws/install/research_bot/share/research_bot/worlds/multi_room_warehouse.world"
+        
+        # Target 2: The raw source folder
+        src_path = "/root/ros2_ws/src/research_bot/worlds/multi_room_warehouse.world"
+        
+        command.extend([
+            "-v", f"{custom_world_path}:{install_path}",
+            "-v", f"{custom_world_path}:{src_path}"
+        ])
         
     command.append("lidar-miner:v1")
     
