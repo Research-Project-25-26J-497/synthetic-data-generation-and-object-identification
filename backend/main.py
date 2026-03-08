@@ -1,11 +1,20 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import os
 import glob
 import shutil
 
 app = FastAPI(title="Research Bot API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, change this to your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # GLOBAL LOCK
 is_mining_running = False

@@ -6,34 +6,67 @@ export default function App() {
   const [systemMessage, setSystemMessage] = useState("System Ready");
   const fileInputRef = useRef(null);
 
-  // Poll the API every 3 seconds to check the Docker container status
+  // 1. The Core Fetch Function
   const fetchStatus = async () => {
     try {
       const statusRes = await fetch('/api/status');
       const statusData = await statusRes.json();
-      setIsMining(statusData.is_mining);
-
+      
       const filesRes = await fetch('/api/latest-files');
       const filesData = await filesRes.json();
+      
       setLatestFiles(filesData);
+      
+      // If the API says it stopped mining, this will flip to false and kill the polling loop
+      setIsMining(statusData.is_mining); 
     } catch (error) {
       console.error("Backend unreachable. Is Uvicorn running?");
+      setIsMining(false);
     }
   };
 
+  // 2. INITIAL LOAD: Run exactly once when the dashboard opens
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 3000);
-    return () => clearInterval(interval);
   }, []);
 
-  // Trigger the Gazebo Docker container
+  // 3. THE POLLING ENGINE: Only runs when 'isMining' is true
+  useEffect(() => {
+    let interval;
+    if (isMining) {
+      console.log("Polling started..."); // You can see this in your browser console!
+      interval = setInterval(() => {
+        fetchStatus();
+      }, 3000);
+    }
+    
+    // Cleanup function: Destroys the timer when mining finishes
+    return () => {
+      if (interval) {
+        console.log("Polling stopped.");
+        clearInterval(interval);
+      }
+    };
+  }, [isMining]);
+
+  // 4. Start Mining Action
   const startMining = async () => {
     setSystemMessage("Deploying TurtleBot3 into simulation...");
-    const res = await fetch('/api/start-mining', { method: 'POST' });
-    const data = await res.json();
-    setSystemMessage(data.message);
-    fetchStatus();
+    setIsMining(true); // Instantly disables the button and wakes up the Polling Engine
+    
+    try {
+      const res = await fetch('/api/start-mining', { method: 'POST' });
+      const data = await res.json();
+      setSystemMessage(data.message);
+      
+      // If the server returns an error (not success and not busy), stop the polling
+      if (data.status !== "success" && data.status !== "busy") {
+        setIsMining(false);
+      }
+    } catch (error) {
+      setSystemMessage("Error connecting to backend.");
+      setIsMining(false);
+    }
   };
 
   // Upload a custom .world file via the Hot-Swap API
@@ -48,7 +81,7 @@ export default function App() {
     const res = await fetch('/api/world/upload', { method: 'POST', body: formData });
     const data = await res.json();
     setSystemMessage(data.message);
-    fileInputRef.current.value = ""; // Clear the file input
+    fileInputRef.current.value = ""; 
   };
 
   // Delete the custom world
@@ -57,7 +90,7 @@ export default function App() {
     const data = await res.json();
     setSystemMessage(data.message);
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
