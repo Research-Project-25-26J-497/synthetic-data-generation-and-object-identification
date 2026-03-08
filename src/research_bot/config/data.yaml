@@ -1,0 +1,13 @@
+# YOLOv8 Configuration for Research Bot
+
+# Absolute path to the dataset (Users must change this to their local path)
+path: /home/reshan/ros2_ws/auto_dataset
+
+# Folders relative to the 'path' above
+train: train/images
+val: train/images  # We use train data for validation in this self-supervised loop
+
+# Class Names
+# Class 0 is "object" because we are doing generic obstacle detection
+names:
+  0: object

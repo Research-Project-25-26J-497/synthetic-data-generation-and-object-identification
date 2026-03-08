@@ -1,0 +1,10 @@
+# Ignore Python cache and environment files
+__pycache__/
+*.pyc
+.env
+venv/
+
+# Ignore old ROS 2 build folders (just in case they ever come back)
+build/
+install/
+log/
