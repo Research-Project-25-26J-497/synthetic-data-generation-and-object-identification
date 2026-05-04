@@ -132,10 +132,59 @@ class LidarDataMiner(Node):
         stop_cmd = Twist()
         self.publisher.publish(stop_cmd)
 
-        # 1. Save JSON
-        self.get_logger().info(f"Saving JSON to: {self.json_save_path}")
+        # 1. GENERATE ANNOTATIONS AND SAVE JSON
+        self.get_logger().info("Structuring and annotating data for Meta-RL...")
+        
+        annotated_dataset = {
+            "dataset_metadata": {
+                "environment": "dynamic_warehouse", # You can pass this as a ROS parameter later if you want
+                "robot_model": "TurtleBot3",
+                "total_frames": len(self.dataset),
+                "timestamp": datetime.datetime.now().isoformat()
+            },
+            "frames": []
+        }
+
+        # Loop through the raw data we just collected and label it
+        for index, sample in enumerate(self.dataset):
+            ranges = sample['lidar']
+            pose = sample['odom']
+            
+            # Find closest object to see if the robot was in danger
+            min_dist = min(ranges) if ranges else 10.0
+            hazard_detected = min_dist < 0.55  # Matches your obstacle_detected threshold
+            
+            # Label every single laser beam
+            annotated_points = []
+            for angle, distance in enumerate(ranges):
+                if distance >= 10.0:
+                    label = "out_of_range"
+                elif distance < 0.55:
+                    label = "critical_obstacle"
+                else:
+                    label = "safe_boundary"
+                    
+                annotated_points.append({
+                    "angle_deg": angle,
+                    "distance": round(distance, 4),
+                    "label": label
+                })
+                
+            # Put the frame together
+            annotated_dataset["frames"].append({
+                "frame_index": index,
+                "robot_pose": pose,
+                "annotations": {
+                    "hazard_detected": hazard_detected,
+                    "closest_obstacle_distance": round(min_dist, 4)
+                },
+                "lidar_points": annotated_points
+            })
+
+        self.get_logger().info(f"Saving Annotated JSON to: {self.json_save_path}")
         with open(self.json_save_path, 'w') as file:
-            json.dump(self.dataset, file, indent=4)
+            json.dump(annotated_dataset, file, indent=2)
+        
             
         # 2. Extract Data and Generate Wall Points
         self.get_logger().info("Calculating global wall coordinates from sensor data...")
